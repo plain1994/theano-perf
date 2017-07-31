@@ -36,7 +36,7 @@ int main()
 	double GB = SIZE * sizeof(double) / 1e+9;
 	double GBps = 4 * ITER * GB / duration;
 	//printf("Running %d openmp threads\n," omp_get_max_threads());
-	printf("DP ArraySize = %1f MB, GB/s = %1f\n", GB * 1000, GBps);
+	printf("DP ArraySize = %1f MB, GB/s = %1f\n\n", GB * 1000, GBps);
 	
 	return 0;
 }

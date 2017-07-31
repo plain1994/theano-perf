@@ -76,8 +76,7 @@ int main(int argc, char** argv)
 
     parseCmdLine(argc, argv);
 
-    printf ("Initializing data for matrix multiplication C=A*B for matrix"
-            "A(%ix%i) and matrix B(%ix%i)\n\n", m, p, p, n);
+    printf ("matrixA(%ix%i) \t matrixB(%ix%i) \t", m, p, p, n);
     alpha = 1.0; beta = 0.0;
 
     
@@ -109,8 +108,7 @@ int main(int argc, char** argv)
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 
                 m, n, p, alpha, A, p, B, n, beta, C, n);
 
-    printf ("Measuring performance of matrix product using Intel(R) MKL dgemm function"
-            "via CBLAS interface.\n\n");
+
     s_initial = dsecnd();
     for (r = 0; r < loop; r++) {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 
@@ -124,8 +122,7 @@ int main(int argc, char** argv)
             " == at %.5f milliseconds == \n\n", (s_elapsed * 1000));
     */
     printf (
-            "== %.5f milliseconds for %d iterations == \n\n", (s_elapsed * 1000), loop);
-    printf ("Deallocating memory \n\n");
+            "%d iterations \t %.5f ms \n\n",loop ,(s_elapsed * 1000));
     mkl_free(A);
     mkl_free(B);
     mkl_free(C);
@@ -138,6 +135,5 @@ int main(int argc, char** argv)
                " of measurements\n\n", i);
     }
     */
-    printf ("Example completed. \n\n");
     return 0;
 }
