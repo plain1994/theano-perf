@@ -8,6 +8,21 @@ import numpy
 
 import theano, theano.tensor.signal.conv
 from theano import tensor
+from theano import tensor as T
+from theano.tensor.nnet import conv2d
+from theano.sandbox import mkl
+from theano.sandbox.mkl.basic_ops import U2IConv, I2U
+from theano.sandbox.mkl.mkl_conv import Conv2D
+
+if not mkl.mkl_available:
+    raise SkipTest('Optional package MKL disabled')
+
+if theano.config.mode == 'FAST_COMPILE':
+    mode_with_mkl = theano.compile.mode.get_mode('FAST_RUN').including('mkl')
+    mode_without_mkl = theano.compile.mode.get_mode('FAST_RUN').excluding('mkl')
+else:
+    mode_with_mkl = theano.compile.mode.get_default_mode().including('mkl')
+    mode_without_mkl = theano.compile.mode.get_default_mode().excluding('mkl')
 
 
 def print_help(exit_status):
@@ -73,36 +88,48 @@ elif len(sys.argv) == 2:
             (status, output) = commands.getstatusoutput('rm -rf ./ddfile')
 
     elif sys.argv[1] == 'op':
-        x = tensor.fmatrix('x')
-        y = tensor.fmatrix('y')
-        z = theano.tensor.signal.conv.conv2d(x, y)
-        f = theano.function([x, y], z)
-        a = numpy.random.rand(500, 500).astype(numpy.float32)
-        b = numpy.random.rand(10, 10).astype(numpy.float32)
+        images = T.dtensor4('inputs')
+        weights = T.dtensor4('weights')
+
+        images_internal = U2IConv(imshp=(12, 3, 256, 256), kshp=(12, 3, 3, 3))(images)
+        convOut_internal = Conv2D(imshp=(12, 3, 256, 256), kshp=(12, 3, 3, 3), filter_flip=False)(images_internal, weights)
+        convOut_user = I2U()(convOut_internal)
+
+        ival = numpy.random.rand(12, 3, 256, 256).astype(numpy.float64)
+        wval = numpy.random.rand(12, 3, 3, 3).astype(numpy.float64)
+
+        fopt = theano.function(inputs=[images, weights], outputs=convOut_user, mode=mode_with_mkl)
         start_time = timeit.default_timer()
-        for i in range(500):
-            o = f(a, b)
+        for i in range(300):
+            new_out = fopt(ival, wval)
+        
         end_time = timeit.default_timer()
-        #print (o)
-        print ('Conv image size(500, 500), filter size(10, 10) ran 500 epoches for %is' % ((end_time - start_time)))
+
+        print ('Conv image size(12, 3, 256, 256), filter size(12, 3, 3, 3) ran 50 epoches for %is' % ((end_time - start_time)))
 
     else:
         print_help(exit_status=1)
 
 elif len(sys.argv) == 3 and sys.argv[1] == 'op':
     if sys.argv[2] == 'conv':
-        x = tensor.fmatrix('x')
-        y = tensor.fmatrix('y')
-        z = theano.tensor.signal.conv.conv2d(x, y)
-        f = theano.function([x, y], z)
-        a = numpy.random.rand(500, 500).astype(numpy.float32)
-        b = numpy.random.rand(10, 10).astype(numpy.float32)
+        images = T.dtensor4('inputs')
+        weights = T.dtensor4('weights')
+
+        images_internal = U2IConv(imshp=(12, 3, 256, 256), kshp=(12, 3, 3, 3))(images)
+        convOut_internal = Conv2D(imshp=(12, 3, 256, 256), kshp=(12, 3, 3, 3), filter_flip=False)(images_internal, weights)
+        convOut_user = I2U()(convOut_internal)
+
+        ival = numpy.random.rand(12, 3, 256, 256).astype(numpy.float64)
+        wval = numpy.random.rand(12, 3, 3, 3).astype(numpy.float64)
+
+        fopt = theano.function(inputs=[images, weights], outputs=convOut_user, mode=mode_with_mkl)
         start_time = timeit.default_timer()
-        for i in range(500):
-            o = f(a, b)
+        for i in range(300):
+            new_out = fopt(ival, wval)
+        
         end_time = timeit.default_timer()
-        #print (o)
-        print ('Conv image size(500, 500), filter size(10, 10) ran 500 epoches for %is' % ((end_time - start_time)))
+
+        print ('Conv image size(12, 3, 256, 256), filter size(12, 3, 3, 3) ran 50 epoches for %is' % ((end_time - start_time)))
 
     elif sys.argv[2] == 'relu':
         print("TBD")
